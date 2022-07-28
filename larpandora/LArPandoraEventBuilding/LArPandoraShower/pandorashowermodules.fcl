@@ -47,7 +47,8 @@ standard_pandoraModularShowerCreation: {
          @local::showerpcadirection,
          @local::showerlengthpercentile,
          # @local::showernumelectronsenergy,
-         @local::showerincrementaltrackhitfinder,
+         # @local::showerincrementaltrackhitfinder,
+         @local::showerprompttrackfinder,
          # @local::showerunidirectiondedx
          @local::showerpandoraslidingfittrackfinder,
          @local::showertracktrajpointdirection,

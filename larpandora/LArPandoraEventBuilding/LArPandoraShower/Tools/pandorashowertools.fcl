@@ -317,6 +317,20 @@ showerincrementaltrackhitfinder:{
     ShowerDirectionInputLabel: "ShowerDirection"
 }
 
+showerprompttrackfinder:{
+    tool_type: ShowerPromptTrackFinder
+    BaseTools: @local::showerbasetools
+    # PFParticleLabel: "pandora"
+    UseShowerDirection:    true
+    ForwardHitsOnly:       true
+    ChargeWeighted:        false
+    StartFitSize:          10
+    ShowerStartPositionInputLabel: "ShowerStartPosition"
+    InitialTrackHitsOutputLabel: "InitialTrackHits"
+    InitialTrackSpacePointsOutputLabel: "InitialTrackSpacePoints"
+    ShowerDirectionInputLabel: "ShowerDirection"
+}
+
 showerpcapropergationstartposition:{
     tool_type: ShowerPCAPropergationStartPosition
     BaseTools: @local::showerbasetools

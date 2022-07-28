@@ -51,6 +51,14 @@ cet_build_plugin(ShowerIncrementalTrackHitFinder larpandora::ShowerTool
   ROOT::RIO
 )
 
+cet_build_plugin(ShowerPromptTrackFinder larpandora::ShowerTool
+  LIBRARIES PRIVATE
+  lardata::DetectorClocksService
+  lardata::DetectorPropertiesService
+  lardataalg::DetectorInfo
+  lardataobj::RecoBase
+)
+
 cet_build_plugin(ShowerLengthPercentile larpandora::ShowerTool
   LIBRARIES PRIVATE
 )
