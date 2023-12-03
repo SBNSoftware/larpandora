@@ -73,6 +73,9 @@ namespace lar_pandora {
       m_disableRealDataCheck; ///< Whether to check if the input file contains real data before accessing MC information
     bool m_lineGapsCreated; ///< Book-keeping: whether line gap creation has been called
 
+    bool m_inputExternalVertex; ///< Whether to check for an internal recob::Vertex to use later...
+    std::string m_vertexfinderModuleLabel; ///< The vertex finder module label
+
     std::unique_ptr<IHitCollectionTool> m_collectHitsTool; ///< art tool used to collect the hits
 
     LArPandoraInput::Settings m_inputSettings;   ///< The lar pandora input settings
