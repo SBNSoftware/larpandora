@@ -182,7 +182,11 @@ namespace lar_pandora {
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  void LArPandoraInput::CreateVertexFromExternal(const art::Event& evt, const Settings& settings, const VertexVector& vtxVector)
+  void LArPandoraInput::CreateVertexFromExternal(const art::Event& evt, const Settings& settings, const VertexVector& vtxVector,
+                                                 const LArDriftVolumeMap& driftVolumeMap
+                                                 // , const HitVector& hitVector
+                                                 // , IdToHitMap& idToHitMap
+                                                )
   {
     mf::LogDebug("LArPandora") << " *** LArPandoraInput::CreatePandoraHits2D(...) *** "
                                << std::endl;
@@ -226,8 +230,45 @@ namespace lar_pandora {
       caloHitParameters.m_electromagneticEnergy = 0.;
       caloHitParameters.m_hadronicEnergy = 0.;
       caloHitParameters.m_pParentAddress = NULL;
+
+      // Find the drift volume this hit belongs to
+      bool foundDriftVol = false;
+      LArDriftVolume theDriftVol = (*driftVolumeMap.begin()).second;
+      for ( auto const& [dvIdx, dvVol] : driftVolumeMap ) {
+        double hitX = vtx->position().X();
+        double hitY = vtx->position().Y();
+        double hitZ = vtx->position().Z();
+        if ( (hitX > (dvVol.GetCenterX()-(dvVol.GetWidthX()/2.))) && (hitX <= (dvVol.GetCenterX()+(dvVol.GetWidthX()/2.))) &&
+             (hitY > (dvVol.GetCenterY()-(dvVol.GetWidthY()/2.))) && (hitY <= (dvVol.GetCenterY()+(dvVol.GetWidthY()/2.))) &&
+             (hitZ > (dvVol.GetCenterZ()-(dvVol.GetWidthZ()/2.))) && (hitZ <= (dvVol.GetCenterZ()+(dvVol.GetWidthZ()/2.))) ) {
+          foundDriftVol = true;
+          theDriftVol = dvVol;
+          break;
+        }
+      }
+      bool foundDaughterVol = false;
+      LArDaughterDriftVolume theDaughterVol = *theDriftVol.GetTpcVolumeList().begin();
+      for ( auto const& dvDaughterVol : theDriftVol.GetTpcVolumeList() ) {
+        double hitX = vtx->position().X();
+        double hitY = vtx->position().Y();
+        double hitZ = vtx->position().Z();
+        if ( (hitX > (dvDaughterVol.GetCenterX()-(dvDaughterVol.GetWidthX()/2.))) && (hitX <= (dvDaughterVol.GetCenterX()+(dvDaughterVol.GetWidthX()/2.))) &&
+             (hitY > (dvDaughterVol.GetCenterY()-(dvDaughterVol.GetWidthY()/2.))) && (hitY <= (dvDaughterVol.GetCenterY()+(dvDaughterVol.GetWidthY()/2.))) &&
+             (hitZ > (dvDaughterVol.GetCenterZ()-(dvDaughterVol.GetWidthZ()/2.))) && (hitZ <= (dvDaughterVol.GetCenterZ()+(dvDaughterVol.GetWidthZ()/2.))) ) {
+          foundDaughterVol = true;
+          theDaughterVol = dvDaughterVol;
+          break;
+        }
+      }
+
       caloHitParameters.m_larTPCVolumeId = 0;
       caloHitParameters.m_daughterVolumeId = 0;
+      if ( foundDriftVol && foundDaughterVol ) {
+        caloHitParameters.m_larTPCVolumeId = theDriftVol.GetVolumeID();
+        caloHitParameters.m_daughterVolumeId = LArPandoraGeometry::GetDaughterVolumeID(driftVolumeMap,
+                                                                                       theDaughterVol.GetCryostat(),
+                                                                                       theDaughterVol.GetTpc());
+      }
 
       // Create the Pandora hit
       try {

@@ -75,10 +75,12 @@ namespace lar_pandora {
      *  @param  evt art event being processed
      *  @param  settings the settings
      *  @param  vtxVector the input list of ART vertices for this event
+     *  @param  driftVolumeMap the mapping from volume id to drift volume
      */
     static void CreateVertexFromExternal(const art::Event& evt,
                                          const Settings& settings,
-                                         const VertexVector& vtxVector);
+                                         const VertexVector& vtxVector,
+                                         const LArDriftVolumeMap& driftVolumeMap );
 
     /**
      *  @brief  Create pandora LArTPCs to represent the different drift volumes in use

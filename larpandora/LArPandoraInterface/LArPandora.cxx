@@ -231,7 +231,7 @@ namespace lar_pandora {
 
     if ( m_inputExternalVertex ) {
       LArPandoraHelper::CollectInputVertices(evt, m_vertexfinderModuleLabel, artVertices);
-      LArPandoraInput::CreateVertexFromExternal(evt, m_inputSettings, artVertices);
+      LArPandoraInput::CreateVertexFromExternal(evt, m_inputSettings, artVertices, m_driftVolumeMap);
     }
 
     if (m_enableMCParticles && (m_disableRealDataCheck || !evt.isRealData())) {
