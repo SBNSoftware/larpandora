@@ -83,27 +83,45 @@ namespace lar_pandora {
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline float Slice::GetTopologicalScore() const { return m_topologicalScore; }
+  inline float Slice::GetTopologicalScore() const
+  {
+    return m_topologicalScore;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline const PFParticleVector& Slice::GetTargetHypothesis() const { return m_targetHypothesis; }
+  inline const PFParticleVector& Slice::GetTargetHypothesis() const
+  {
+    return m_targetHypothesis;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline const PFParticleVector& Slice::GetCosmicRayHypothesis() const { return m_crHypothesis; }
+  inline const PFParticleVector& Slice::GetCosmicRayHypothesis() const
+  {
+    return m_crHypothesis;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline bool Slice::IsTaggedAsTarget() const { return m_isTarget; }
+  inline bool Slice::IsTaggedAsTarget() const
+  {
+    return m_isTarget;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline void Slice::TagAsTarget() { m_isTarget = true; }
+  inline void Slice::TagAsTarget()
+  {
+    m_isTarget = true;
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline void Slice::TagAsCosmic() { m_isTarget = false; }
+  inline void Slice::TagAsCosmic()
+  {
+    m_isTarget = false;
+  }
 
 } // namespace lar_pandora
 
