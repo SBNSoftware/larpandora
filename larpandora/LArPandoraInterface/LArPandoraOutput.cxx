@@ -1108,7 +1108,7 @@ namespace lar_pandora {
     }
 
     // feed the algorithm with all the cluster hits
-    algo.SetHits(gser, hits_for_params);
+    algo.SetHitsFromPointers(gser, hits_for_params);
 
     // create the recob::Cluster directly in the vector
     return cluster::ClusterCreator(gser,
