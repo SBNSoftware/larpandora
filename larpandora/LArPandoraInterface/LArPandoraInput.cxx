@@ -89,7 +89,7 @@ namespace lar_pandora {
       const double z0_cm(xyz.Z());
 
       // Get other hit properties here
-      const double wire_pitch_cm(wireReadoutGeom.Plane({0, 0, hit_View}).WirePitch()); // cm
+      const double wire_pitch_cm(wireReadoutGeom.Plane({0, 0}, hit_View).WirePitch()); // cm
       const double mips(LArPandoraInput::GetMips(detProp, settings, hit_Charge, hit_View));
 
       // Create Pandora CaloHit
@@ -792,7 +792,7 @@ namespace lar_pandora {
     auto const& wireReadoutGeom = art::ServiceHandle<geo::WireReadout const>()->Get();
 
     // TODO: Unite this procedure with other calorimetry procedures under development
-    const double dQdX(hit_Charge / (wireReadoutGeom.Plane({0, 0, hit_View}).WirePitch())); // ADC/cm
+    const double dQdX(hit_Charge / (wireReadoutGeom.Plane({0, 0}, hit_View).WirePitch())); // ADC/cm
     const double dQdX_e(dQdX /
                         (detProp.ElectronsToADC() * settings.m_recombination_factor)); // e/cm
     const double dEdX(settings.m_useBirksCorrection ?
