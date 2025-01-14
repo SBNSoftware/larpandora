@@ -90,6 +90,29 @@ namespace lar_pandora {
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  void LArPandoraHelper::CollectInputVertices(const art::Event& evt,
+                                              const std::string& label,
+                                              VertexVector& vtxVector)
+  {
+    art::Handle<std::vector<recob::Vertex>> theVtxs;
+    evt.getByLabel(label, theVtxs);
+
+    if (!theVtxs.isValid()) {
+      mf::LogDebug("LArPandora") << "  Failed to find vertices... " << std::endl;
+      return;
+    }
+    else {
+      mf::LogDebug("LArPandora") << "  Found: " << theVtxs->size() << " Vertices " << std::endl;
+    }
+
+    for (unsigned int i = 0; i < theVtxs->size(); ++i) {
+      const art::Ptr<recob::Vertex> vtx(theVtxs, i);
+      vtxVector.push_back(vtx);
+    }
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   void LArPandoraHelper::CollectPFParticles(const art::Event& evt,
                                             const std::string& label,
                                             PFParticleVector& particleVector)

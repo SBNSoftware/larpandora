@@ -13,6 +13,7 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Vertex.h"
 
 #include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
@@ -26,6 +27,7 @@
 #include "lardata/DetectorInfoServices/LArPropertiesService.h"
 
 #include "Api/PandoraApi.h"
+#include "Api/PandoraContentApi.h" // For vertex object creation
 #include "Managers/PluginManager.h"
 #include "Plugins/LArTransformationPlugin.h"
 
@@ -175,6 +177,115 @@ namespace lar_pandora {
                                      << std::endl;
         continue;
       }
+    }
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  void LArPandoraInput::CreateVertexFromExternal(const art::Event& evt, const Settings& settings, const VertexVector& vtxVector,
+                                                 const LArDriftVolumeMap& driftVolumeMap
+                                                 // , const HitVector& hitVector
+                                                 // , IdToHitMap& idToHitMap
+                                                )
+  {
+    mf::LogDebug("LArPandora") << " *** LArPandoraInput::CreatePandoraHits2D(...) *** "
+                               << std::endl;
+
+    if (!settings.m_pPrimaryPandora)
+      throw cet::exception("LArPandora")
+        << "CreateVertexFromExternal - primary Pandora instance does not exist ";
+
+    const pandora::Pandora* pPandora(settings.m_pPrimaryPandora);
+
+    lar_content::LArCaloHitFactory caloHitFactory;
+
+    for (VertexVector::const_iterator iter = vtxVector.begin(), iterEnd = vtxVector.end();
+         iter != iterEnd;
+         ++iter) {
+      const art::Ptr<recob::Vertex> vtx = *iter;
+
+      lar_content::LArCaloHitParameters caloHitParameters;
+
+      // The 2 parameters we actually care about
+      caloHitParameters.m_hitType = pandora::HIT_CUSTOM;
+      caloHitParameters.m_positionVector = pandora::CartesianVector( vtx->position().X(),
+                                                                     vtx->position().Y(),
+                                                                     vtx->position().Z() );
+      // Just some defaults so the module will work
+      caloHitParameters.m_expectedDirection = pandora::CartesianVector(0., 0., 1.);
+      caloHitParameters.m_cellNormalVector = pandora::CartesianVector(0., 0., 1.);
+      caloHitParameters.m_cellSize0 = 0.;
+      caloHitParameters.m_cellSize1 = 0.;
+      caloHitParameters.m_cellThickness = 0.;
+      caloHitParameters.m_cellGeometry = pandora::RECTANGULAR;
+      caloHitParameters.m_time = 0.;
+      caloHitParameters.m_nCellRadiationLengths = 0.;
+      caloHitParameters.m_nCellInteractionLengths = 0.;
+      caloHitParameters.m_isDigital = false;
+      caloHitParameters.m_hitRegion = pandora::SINGLE_REGION;
+      caloHitParameters.m_layer = 0;
+      caloHitParameters.m_isInOuterSamplingLayer = false;
+      caloHitParameters.m_inputEnergy = 0.;
+      caloHitParameters.m_mipEquivalentEnergy = 0.;
+      caloHitParameters.m_electromagneticEnergy = 0.;
+      caloHitParameters.m_hadronicEnergy = 0.;
+      caloHitParameters.m_pParentAddress = NULL;
+
+      // Find the drift volume this hit belongs to
+      bool foundDriftVol = false;
+      LArDriftVolume theDriftVol = (*driftVolumeMap.begin()).second;
+      for ( auto const& [dvIdx, dvVol] : driftVolumeMap ) {
+        double hitX = vtx->position().X();
+        double hitY = vtx->position().Y();
+        double hitZ = vtx->position().Z();
+        if ( (hitX > (dvVol.GetCenterX()-(dvVol.GetWidthX()/2.))) && (hitX <= (dvVol.GetCenterX()+(dvVol.GetWidthX()/2.))) &&
+             (hitY > (dvVol.GetCenterY()-(dvVol.GetWidthY()/2.))) && (hitY <= (dvVol.GetCenterY()+(dvVol.GetWidthY()/2.))) &&
+             (hitZ > (dvVol.GetCenterZ()-(dvVol.GetWidthZ()/2.))) && (hitZ <= (dvVol.GetCenterZ()+(dvVol.GetWidthZ()/2.))) ) {
+          foundDriftVol = true;
+          theDriftVol = dvVol;
+          break;
+        }
+      }
+      bool foundDaughterVol = false;
+      LArDaughterDriftVolume theDaughterVol = *theDriftVol.GetTpcVolumeList().begin();
+      for ( auto const& dvDaughterVol : theDriftVol.GetTpcVolumeList() ) {
+        double hitX = vtx->position().X();
+        double hitY = vtx->position().Y();
+        double hitZ = vtx->position().Z();
+        if ( (hitX > (dvDaughterVol.GetCenterX()-(dvDaughterVol.GetWidthX()/2.))) && (hitX <= (dvDaughterVol.GetCenterX()+(dvDaughterVol.GetWidthX()/2.))) &&
+             (hitY > (dvDaughterVol.GetCenterY()-(dvDaughterVol.GetWidthY()/2.))) && (hitY <= (dvDaughterVol.GetCenterY()+(dvDaughterVol.GetWidthY()/2.))) &&
+             (hitZ > (dvDaughterVol.GetCenterZ()-(dvDaughterVol.GetWidthZ()/2.))) && (hitZ <= (dvDaughterVol.GetCenterZ()+(dvDaughterVol.GetWidthZ()/2.))) ) {
+          foundDaughterVol = true;
+          theDaughterVol = dvDaughterVol;
+          break;
+        }
+      }
+
+      caloHitParameters.m_larTPCVolumeId = 0;
+      caloHitParameters.m_daughterVolumeId = 0;
+      if ( foundDriftVol && foundDaughterVol ) {
+        caloHitParameters.m_larTPCVolumeId = theDriftVol.GetVolumeID();
+        caloHitParameters.m_daughterVolumeId = LArPandoraGeometry::GetDaughterVolumeID(driftVolumeMap,
+                                                                                       theDaughterVol.GetCryostat(),
+                                                                                       theDaughterVol.GetTpc());
+      }
+
+      // Create the Pandora hit
+      try {
+        PANDORA_THROW_RESULT_IF(
+          pandora::STATUS_CODE_SUCCESS,
+          !=,
+          PandoraApi::CaloHit::Create(*pPandora, caloHitParameters, caloHitFactory));
+      }
+      catch (const pandora::StatusCodeException&) {
+        mf::LogWarning("LArPandora") << "CreateVertexFromExternal - unable to create calo hit, "
+                                        "insufficient or invalid information supplied "
+                                     << std::endl;
+        continue;
+      }
+
+      std::cout << "!!!!! !!!!! !!!!! SAVED VERTEX FOR EVENT AT ("
+                << vtx->position().X() << ", " << vtx->position().Y() << ", " << vtx->position().Z() << ")" << std::endl;
     }
   }
 

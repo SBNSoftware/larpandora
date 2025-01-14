@@ -150,6 +150,15 @@ namespace lar_pandora {
     static void CollectHits(const art::Event& evt, const std::string& label, HitVector& hitVector);
 
     /**
+     *  @brief Collect the reconstructed Vertices from the ART event record
+     *
+     *  @param evt the ART event record
+     *  @param label the label for the Vertex list in the event
+     *  @param vtxVector the ouput vector of Vertex objects
+     */
+    static void CollectInputVertices(const art::Event& evt, const std::string& label, VertexVector& vtxVector);
+
+    /**
      *  @brief Collect the reconstructed PFParticles from the ART event record
      *
      *  @param evt the ART event record

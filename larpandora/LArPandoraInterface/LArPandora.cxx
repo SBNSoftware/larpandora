@@ -62,6 +62,8 @@ namespace lar_pandora {
     , m_enableMCParticles(pset.get<bool>("EnableMCParticles", false))
     , m_disableRealDataCheck(pset.get<bool>("DisableRealDataCheck", false))
     , m_lineGapsCreated(false)
+    , m_inputExternalVertex(pset.get<bool>("InputExternalVertex", false))
+    , m_vertexfinderModuleLabel(pset.get<std::string>("VertexFinderModuleLabel", ""))
     , m_collectHitsTool{
         art::make_tool<IHitCollectionTool>(this->ConstructHitCollectionToolParameterSet(pset))}
   {
@@ -187,6 +189,7 @@ namespace lar_pandora {
     RawMCParticleVector generatorArtMCParticleVector;
     MCTruthToMCParticles artMCTruthToMCParticles;
     MCParticlesToMCTruth artMCParticlesToMCTruth;
+    VertexVector artVertices;
 
     bool areSimChannelsValid(false);
 
@@ -225,6 +228,11 @@ namespace lar_pandora {
 
     LArPandoraInput::CreatePandoraHits2D(
       evt, m_inputSettings, m_driftVolumeMap, artHits, idToHitMap);
+
+    if ( m_inputExternalVertex ) {
+      LArPandoraHelper::CollectInputVertices(evt, m_vertexfinderModuleLabel, artVertices);
+      LArPandoraInput::CreateVertexFromExternal(evt, m_inputSettings, artVertices, m_driftVolumeMap);
+    }
 
     if (m_enableMCParticles && (m_disableRealDataCheck || !evt.isRealData())) {
       LArPandoraInput::CreatePandoraMCParticles(m_inputSettings,
