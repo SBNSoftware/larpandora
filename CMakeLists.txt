@@ -10,6 +10,8 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules REQUIRED)
 project(larpandora VERSION 10.01.09.01 LANGUAGES CXX)
+# Explicitly set the project string
+set(${PROJECT_NAME}_CMAKE_PROJECT_VERSION_STRING "10.01.09__01sbn2")
 
 include(CetCMakeEnv)
 cet_cmake_env()
