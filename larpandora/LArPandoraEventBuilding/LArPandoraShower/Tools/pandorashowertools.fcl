@@ -20,6 +20,7 @@ showerpcadirection:{
     UseStartPosition: true #The direction of the PCA is in the direction of
     #(Shower Center - Start Position)
     ChargeWeighted:   false #Apply a charge weighting in the PCA.
+    WritePCAxis:      true #Write the PCA to the event as a PCAxis product
     ShowerStartPositionInputLabel: "ShowerStartPosition"
     ShowerDirectionOutputLabel: "ShowerDirection"
     ShowerCentreOutputLabel: "ShowerCentre"
@@ -161,6 +162,9 @@ showertrackdirection:{
     UsePositionInfo:  true #Don't use the directionAt point rather than definition above.
     #i.e. ((Position of traj point + 1) - (Position of traj point)
     DebugEVD:         false
+    InitialTrackInputLabel: "InitialTrack"
+    ShowerStartPositionInputLabel: "ShowerStartPosition"
+    ShowerDirectionOutputLabel: "ShowerDirection"
 }
 
 showertracktrajpointdirection: {
@@ -357,6 +361,27 @@ showerlengthpercentile:{
     ShowerDirectionInputLabel: "ShowerDirection"
     ShowerLengthOutputLabel: "ShowerLength"
     ShowerOpeningAngleOutputLabel: "ShowerOpeningAngle"
+}
+
+showerrefinedpcadirection:{
+    tool_type: ShowerRefinedPCADirection
+    BaseTools: @local::showerbasetools
+    # PFParticleLabel: "pandora"
+    WritePCAxis: true
+    ChargeWeighted: true
+    QuadraticLongitudinalWeight: true
+    QuadraticTransverseWeight: true
+    MinPCAPoints: 10
+    MaxIterations: 50
+    ConvergenceAngle: 0.005
+    TransverseScale: 3.
+    LongitudinalScale: 7.
+    DistanceFloor: 1.
+    ShowerStartPositionInputLabel: "ShowerStartPosition"
+    ShowerDirectionInputLabel: "ShowerDirection"
+    ShowerDirectionOutputLabel: "ShowerDirection"
+    ShowerCentreOutputLabel: "ShowerCentre"
+    ShowerPCAOutputLabel: "ShowerPCA"
 }
 
 showerpcaeigenvaluelength:{

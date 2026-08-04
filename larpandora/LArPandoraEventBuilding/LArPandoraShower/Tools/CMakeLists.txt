@@ -55,6 +55,15 @@ cet_build_plugin(ShowerLengthPercentile larpandora::ShowerTool
   LIBRARIES PRIVATE
 )
 
+cet_build_plugin(ShowerRefinedPCADirection larpandora::ShowerTool
+  LIBRARIES PRIVATE
+  lardata::DetectorClocksService
+  lardata::DetectorPropertiesService
+  lardataalg::DetectorInfo
+  lardataobj::RecoBase
+  Eigen3::Eigen
+)
+
 cet_build_plugin(ShowerLinearEnergy larpandora::ShowerTool
   LIBRARIES PRIVATE
   lardata::DetectorClocksService

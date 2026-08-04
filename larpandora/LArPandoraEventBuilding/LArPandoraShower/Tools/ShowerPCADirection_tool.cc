@@ -38,7 +38,7 @@ namespace ShowerRecoTools {
   private:
     void InitialiseProducers() override;
 
-    //Function to add the assoctions
+    //Function to add the associations
     int AddAssociations(const art::Ptr<recob::PFParticle>& pfpPtr,
                         art::Event& Event,
                         reco::shower::ShowerElementHolder& ShowerEleHolder) override;
@@ -56,6 +56,7 @@ namespace ShowerRecoTools {
     //fcl
     art::InputTag fPFParticleLabel;
     int fVerbose;
+    bool fWritePCAxis; //Should write out a PCAxis to event
     unsigned int
       fNSegments; //Used in the RMS gradient. How many segments should we split the shower into.
     bool fUseStartPosition; //If we use the start position the drection of the
@@ -72,6 +73,7 @@ namespace ShowerRecoTools {
     : IShowerTool(pset.get<fhicl::ParameterSet>("BaseTools"))
     , fPFParticleLabel(pset.get<art::InputTag>("PFParticleLabel"))
     , fVerbose(pset.get<int>("Verbose"))
+    , fWritePCAxis(pset.get<bool>("WritePCAxis"))
     , fNSegments(pset.get<unsigned int>("NSegments"))
     , fUseStartPosition(pset.get<bool>("UseStartPosition"))
     , fChargeWeighted(pset.get<bool>("ChargeWeighted"))
@@ -83,6 +85,7 @@ namespace ShowerRecoTools {
 
   void ShowerPCADirection::InitialiseProducers()
   {
+    if (!fWritePCAxis) return;
     InitialiseProduct<std::vector<recob::PCAxis>>(fShowerPCAOutputLabel);
     InitialiseProduct<art::Assns<recob::Shower, recob::PCAxis>>("ShowerPCAxisAssn");
     InitialiseProduct<art::Assns<recob::PFParticle, recob::PCAxis>>("PFParticlePCAxisAssn");
@@ -273,6 +276,7 @@ namespace ShowerRecoTools {
                                           art::Event& Event,
                                           reco::shower::ShowerElementHolder& ShowerEleHolder)
   {
+    if (!fWritePCAxis) return 0;
 
     //First check the element has been set
     if (!ShowerEleHolder.CheckElement(fShowerPCAOutputLabel)) {

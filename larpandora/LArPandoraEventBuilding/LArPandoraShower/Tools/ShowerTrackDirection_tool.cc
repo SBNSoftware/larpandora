@@ -35,6 +35,10 @@ namespace ShowerRecoTools {
     bool fUsePositionInfo; //Don't use the directionAtPoint rather
                            //than definition above.
                            //i.e((Position of traj point + 1) - (Position of traj point)
+
+    std::string fInitialTrackInputLabel;
+    std::string fShowerStartPositionInputLabel;
+    std::string fShowerDirectionOutputLabel;
   };
 
   ShowerTrackDirection::ShowerTrackDirection(const fhicl::ParameterSet& pset)
@@ -42,6 +46,9 @@ namespace ShowerRecoTools {
     , fVerbose(pset.get<int>("Verbose"))
     , fUsePandoraVertex(pset.get<bool>("UsePandoraVertex"))
     , fUsePositionInfo(pset.get<bool>("UsePositionInfo"))
+    , fInitialTrackInputLabel(pset.get<std::string>("InitialTrackInputLabel"))
+    , fShowerStartPositionInputLabel(pset.get<std::string>("ShowerStartPositionInputLabel"))
+    , fShowerDirectionOutputLabel(pset.get<std::string>("ShowerDirecitonOutputLabel"))
   {}
 
   int ShowerTrackDirection::CalculateElement(const art::Ptr<recob::PFParticle>& pfparticle,
@@ -50,13 +57,13 @@ namespace ShowerRecoTools {
   {
 
     //Check the Track has been defined
-    if (!ShowerEleHolder.CheckElement("InitialTrack")) {
+    if (!ShowerEleHolder.CheckElement(fInitialTrackInputLabel)) {
       if (fVerbose) mf::LogError("ShowerTrackDirection") << "Initial track not set" << std::endl;
       return 0;
     }
 
     //Check the start position is set.
-    if (fUsePandoraVertex && !ShowerEleHolder.CheckElement("ShowerStartPosition")) {
+    if (fUsePandoraVertex && !ShowerEleHolder.CheckElement(fShowerStartPositionInputLabel)) {
       if (fVerbose)
         mf::LogError("ShowerTrackDirection") << "Start position not set, returning " << std::endl;
       return 0;
@@ -64,11 +71,13 @@ namespace ShowerRecoTools {
 
     //Get the track
     recob::Track InitialTrack;
-    ShowerEleHolder.GetElement("InitialTrack", InitialTrack);
+    ShowerEleHolder.GetElement(fInitialTrackInputLabel, InitialTrack);
 
     if (fUsePositionInfo) {
       geo::Point_t StartPosition;
-      if (fUsePandoraVertex) { ShowerEleHolder.GetElement("ShowerStartPosition", StartPosition); }
+      if (fUsePandoraVertex) {
+        ShowerEleHolder.GetElement(fShowerStartPositionInputLabel, StartPosition);
+      }
       else {
         StartPosition = InitialTrack.Start();
       }
@@ -140,7 +149,7 @@ namespace ShowerRecoTools {
       if (N > 0) {
         geo::Vector_t Direction = geo::vect::toVector(Direction_Mean.Unit());
         geo::Vector_t DirectionErr = {RMSX, RMSY, RMSZ};
-        ShowerEleHolder.SetElement(Direction, DirectionErr, "ShowerDirection");
+        ShowerEleHolder.SetElement(Direction, DirectionErr, fShowerDirectionOutputLabel);
       }
       else {
         if (fVerbose)
@@ -212,7 +221,7 @@ namespace ShowerRecoTools {
       if (N > 0) {
         geo::Vector_t Direction = geo::vect::toVector(Direction_Mean.Unit());
         geo::Vector_t DirectionErr = {RMSX, RMSY, RMSZ};
-        ShowerEleHolder.SetElement(Direction, DirectionErr, "ShowerDirection");
+        ShowerEleHolder.SetElement(Direction, DirectionErr, fShowerDirectionOutputLabel);
       }
       else {
         if (fVerbose)

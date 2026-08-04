@@ -103,72 +103,38 @@ namespace ShowerRecoTools {
     std::vector<art::Ptr<recob::Hit>> InitialTrackHits;
     ShowerEleHolder.GetElement(fInitialTrackHitsInputLabel, InitialTrackHits);
 
-    //Calculate the mean direction and the the standard deviation
-    float sumX = 0, sumX2 = 0;
-    float sumY = 0, sumY2 = 0;
-    float sumZ = 0, sumZ2 = 0;
+    //Calculate the mean direction
+    geo::Vector_t meanDir = {0., 0., 0.};
 
     //Get the spacepoints associated to the track hit
     std::vector<art::Ptr<recob::SpacePoint>> intitaltrack_sp;
+    int N = 0;
     for (auto const hit : InitialTrackHits) {
       std::vector<art::Ptr<recob::SpacePoint>> sps = fmsp.at(hit.key());
       for (auto const sp : sps) {
         intitaltrack_sp.push_back(sp);
 
         //Get the direction relative to the start positon
-        auto const pos = sp->position() - StartPosition;
-        if (pos.R() == 0) { continue; }
-
-        sumX = pos.X();
-        sumX2 += pos.X() * pos.X();
-        sumY = pos.Y();
-        sumY2 += pos.Y() * pos.Y();
-        sumZ = pos.Z();
-        sumZ2 += pos.Z() * pos.Z();
-      }
-    }
-
-    float NumSps = intitaltrack_sp.size();
-    auto const Mean = geo::Vector_t{sumX / NumSps, sumY / NumSps, sumZ / NumSps}.Unit();
-
-    float RMSX = 999;
-    float RMSY = 999;
-    float RMSZ = 999;
-    if (sumX2 / NumSps - ((sumX / NumSps) * ((sumX / NumSps))) > 0) {
-      RMSX = std::sqrt(sumX2 / NumSps - ((sumX / NumSps) * ((sumX / NumSps))));
-    }
-    if (sumY2 / NumSps - ((sumY / NumSps) * ((sumY / NumSps))) > 0) {
-      RMSY = std::sqrt(sumY2 / NumSps - ((sumY / NumSps) * ((sumY / NumSps))));
-    }
-    if (sumZ2 / NumSps - ((sumZ / NumSps) * ((sumZ / NumSps))) > 0) {
-      RMSZ = std::sqrt(sumZ2 / NumSps - ((sumZ / NumSps) * ((sumZ / NumSps))));
-    }
-
-    //Loop over the spacepoints and remove ones the relative direction is not within one sigma.
-    geo::Vector_t Direction_Mean{0, 0, 0};
-    int N = 0;
-    for (auto const sp : intitaltrack_sp) {
-      auto const Direction = sp->position() - StartPosition;
-      if ((std::abs((Direction - Mean).X()) < 1 * RMSX) &&
-          (std::abs((Direction - Mean).Y()) < 1 * RMSY) &&
-          (std::abs((Direction - Mean).Z()) < 1 * RMSZ)) {
-        if (Direction.R() == 0) { continue; }
+        auto const dir = (sp->position() - StartPosition).Unit();
+        if (dir.R() == 0) { continue; }
+        meanDir += dir;
         ++N;
-        Direction_Mean += Direction;
       }
     }
 
     if (N > 0) {
-      //Take the mean value
-      Direction_Mean = Direction_Mean.Unit();
-      ShowerEleHolder.SetElement(Direction_Mean, fShowerDirectionOutputLabel);
+      meanDir = meanDir.Unit();
+      //NOTE need to include a direction otherwise this will not override any previous shower direciton tha did include an error :(
+      geo::Vector_t meanDirErr = {-999, -999, -999}; //Not implementing an error
+      ShowerEleHolder.SetElement(meanDir, meanDirErr, fShowerDirectionOutputLabel);
     }
     else {
       if (fVerbose)
         mf::LogError("ShowerTrackHitDirection")
-          << "None of the points are within 1 sigma" << std::endl;
+          << "No points found to calculate a direction" << std::endl;
       return 1;
     }
+
     return 0;
   }
 }
