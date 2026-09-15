@@ -9,6 +9,10 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+#include "Geometry/LArReadoutChannel.h"
+#include "Geometry/LArReadoutUnit.h"
+#include "Pandora/PandoraEnumeratedTypes.h"
+
 #include <map>
 #include <vector>
 
@@ -85,6 +89,93 @@ namespace lar_pandora {
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
+  class LArPandoraReadoutChannel {
+  public:
+    LArPandoraReadoutChannel(unsigned int id,
+                             const pandora::LArReadoutChannel::ViewChannelIntervalArray& intervals);
+    unsigned int GetId() const;
+    const pandora::LArReadoutChannel::ViewChannelIntervalArray& GetChannelIntervals() const;
+
+  private:
+    unsigned int m_id;
+    pandora::LArReadoutChannel::ViewChannelIntervalArray m_channelIntervals;
+  };
+  typedef std::vector<LArPandoraReadoutChannel> LArPandoraReadoutChannelList;
+
+  class LArPandoraReadoutUnit {
+  public:
+    /**
+     *  @brief  Constructor
+     *
+     *  @param  id                  the readout unit ID
+     *  @param  view                the view of the readout unit (U, V, W)
+     *  @param  referenceCoordinate the reference coordinate for the readout unit
+     *  @param  pitch               the pitch of the readout unit
+     *  @param  unitCenter         the center of the readout unit's own active-area box
+     *  @param  unitSize           the size of the readout unit's own active-area box
+     *  @param  channels            the list of channels in the readout unit
+     */
+    LArPandoraReadoutUnit(unsigned int id,
+                          pandora::HitType view,
+                          float referenceCoordinate,
+                          float pitch,
+                          const pandora::CartesianVector& unitCenter,
+                          const pandora::CartesianVector& unitSize,
+                          const LArPandoraReadoutChannelList& channels);
+
+    /**
+     *  @brief  Return the readout unit ID
+     */
+    unsigned int GetId() const;
+
+    /**
+     *  @brief  Return the view of the readout unit (U, V, W)
+     */
+    pandora::HitType GetView() const;
+
+    /**
+     *  @brief  Return the reference coordinate for the readout unit
+     */
+    float GetReferenceCoordinate() const;
+
+    /**
+     *  @brief  Return the pitch of the readout unit
+     */
+    float GetPitch() const;
+
+    /**
+     *  @brief  Return the center of the readout unit's own active-area box
+     */
+    const pandora::CartesianVector& GetUnitCenter() const;
+
+    /**
+     *  @brief  Return the size of the readout unit's own active-area box
+     */
+    const pandora::CartesianVector& GetUnitSize() const;
+
+    /**
+     *  @brief  Return the list of channels in the readout unit
+     */
+    const LArPandoraReadoutChannelList& GetChannels() const;
+
+  private:
+    unsigned int m_id;           ///< plane ID for the readout unit
+    pandora::HitType m_view;     ///< view of the readout unit (U, V, W)
+    float m_referenceCoordinate; ///< z*cosθ - y*sinθ at the midpoint of channel 0's wire
+    float m_pitch;               ///< signed coordinate difference between channel 1 and channel 0
+
+    pandora::CartesianVector
+      m_unitCenter; ///< The centre of the unit's own active-area box (X unused)
+    pandora::CartesianVector
+      m_unitSize; ///< The extent of the unit's own active-area box (X unused)
+
+    LArPandoraReadoutChannelList m_channels; ///< list of channels in the readout unit
+  };
+  typedef std::vector<LArPandoraReadoutUnit> LArPandoraReadoutUnitList;
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
   /**
  *  @brief  daughter drift volume class to hold properties of daughter drift volumes
  */
@@ -109,7 +200,8 @@ namespace lar_pandora {
                            const float centerZ,
                            const float widthX,
                            const float widthY,
-                           const float widthZ);
+                           const float widthZ,
+                           const LArPandoraReadoutUnitList& readoutUnitList);
 
     /**
      *  @brief  Return cryostat ID
@@ -151,6 +243,11 @@ namespace lar_pandora {
      */
     float GetWidthZ() const;
 
+    /**
+     *  @brief  Return list of readout units associated with this tpc volume
+     */
+    const LArPandoraReadoutUnitList& GetReadoutUnitList() const;
+
   private:
     unsigned int m_cryostat;
     unsigned int m_tpc;
@@ -160,6 +257,7 @@ namespace lar_pandora {
     float m_widthX;
     float m_widthY;
     float m_widthZ;
+    LArPandoraReadoutUnitList m_readoutUnitList;
   };
 
   typedef std::vector<LArDaughterDriftVolume> LArDaughterDriftVolumeList;
@@ -378,14 +476,108 @@ namespace lar_pandora {
   //------------------------------------------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  inline LArDaughterDriftVolume::LArDaughterDriftVolume(const unsigned int cryostat,
-                                                        const unsigned int tpc,
-                                                        const float centerX,
-                                                        const float centerY,
-                                                        const float centerZ,
-                                                        const float widthX,
-                                                        const float widthY,
-                                                        const float widthZ)
+  inline LArPandoraReadoutChannel::LArPandoraReadoutChannel(
+    unsigned int id,
+    const pandora::LArReadoutChannel::ViewChannelIntervalArray& intervals)
+    : m_id{id}, m_channelIntervals{intervals}
+  {}
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline unsigned int LArPandoraReadoutChannel::GetId() const
+  {
+    return m_id;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline const pandora::LArReadoutChannel::ViewChannelIntervalArray&
+  LArPandoraReadoutChannel::GetChannelIntervals() const
+  {
+    return m_channelIntervals;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline LArPandoraReadoutUnit::LArPandoraReadoutUnit(unsigned int id,
+                                                      pandora::HitType view,
+                                                      float referenceCoordinate,
+                                                      float pitch,
+                                                      const pandora::CartesianVector& unitCenter,
+                                                      const pandora::CartesianVector& unitSize,
+                                                      const LArPandoraReadoutChannelList& channels)
+    : m_id{id}
+    , m_view{view}
+    , m_referenceCoordinate{referenceCoordinate}
+    , m_pitch{pitch}
+    , m_unitCenter{unitCenter}
+    , m_unitSize{unitSize}
+    , m_channels{channels}
+  {}
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline unsigned int LArPandoraReadoutUnit::GetId() const
+  {
+    return m_id;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline pandora::HitType LArPandoraReadoutUnit::GetView() const
+  {
+    return m_view;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline float LArPandoraReadoutUnit::GetReferenceCoordinate() const
+  {
+    return m_referenceCoordinate;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline float LArPandoraReadoutUnit::GetPitch() const
+  {
+    return m_pitch;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline const pandora::CartesianVector& LArPandoraReadoutUnit::GetUnitCenter() const
+  {
+    return m_unitCenter;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline const pandora::CartesianVector& LArPandoraReadoutUnit::GetUnitSize() const
+  {
+    return m_unitSize;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline const LArPandoraReadoutChannelList& LArPandoraReadoutUnit::GetChannels() const
+  {
+    return m_channels;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline LArDaughterDriftVolume::LArDaughterDriftVolume(
+    const unsigned int cryostat,
+    const unsigned int tpc,
+    const float centerX,
+    const float centerY,
+    const float centerZ,
+    const float widthX,
+    const float widthY,
+    const float widthZ,
+    const LArPandoraReadoutUnitList& readoutUnitList)
     : m_cryostat(cryostat)
     , m_tpc(tpc)
     , m_centerX(centerX)
@@ -394,6 +586,7 @@ namespace lar_pandora {
     , m_widthX(widthX)
     , m_widthY(widthY)
     , m_widthZ(widthZ)
+    , m_readoutUnitList{readoutUnitList}
   {}
 
   //------------------------------------------------------------------------------------------------------------------------------------------
@@ -450,6 +643,13 @@ namespace lar_pandora {
   inline float LArDaughterDriftVolume::GetWidthZ() const
   {
     return m_widthZ;
+  }
+
+  //------------------------------------------------------------------------------------------------------------------------------------------
+
+  inline const LArPandoraReadoutUnitList& LArDaughterDriftVolume::GetReadoutUnitList() const
+  {
+    return m_readoutUnitList;
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------

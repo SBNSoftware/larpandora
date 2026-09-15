@@ -121,6 +121,7 @@ namespace lar_pandora {
           LArPandoraGeometry::GetVolumeID(driftVolumeMap, hit_WireID.Cryostat, hit_WireID.TPC);
         caloHitParameters.m_daughterVolumeId = LArPandoraGeometry::GetDaughterVolumeID(
           driftVolumeMap, hit_WireID.Cryostat, hit_WireID.TPC);
+        caloHitParameters.m_channelId = hit_WireID.Wire;
 
         if (hit_View == detType->TargetViewW(hit_WireID.TPC, hit_WireID.Cryostat)) {
           caloHitParameters.m_hitType = pandora::TPC_VIEW_W;
@@ -189,7 +190,8 @@ namespace lar_pandora {
   //------------------------------------------------------------------------------------------------------------------------------------------
 
   void LArPandoraInput::CreatePandoraLArTPCs(const Settings& settings,
-                                             const LArDriftVolumeList& driftVolumeList)
+                                             const LArDriftVolumeList& driftVolumeList,
+                                             const LArDriftVolumeMap& driftVolumeMap)
   {
     mf::LogDebug("LArPandora") << " *** LArPandoraInput::CreatePandoraLArTPCs(...) *** "
                                << std::endl;
@@ -219,6 +221,35 @@ namespace lar_pandora {
         parameters.m_wireAngleW = driftVolume.GetWireAngleW();
         parameters.m_sigmaUVW = driftVolume.GetSigmaUVZ();
         parameters.m_isDriftInPositiveX = driftVolume.IsPositiveDrift();
+
+        for (const LArDaughterDriftVolume& childVolume : driftVolume.GetTpcVolumeList()) {
+          object_creation::LArReadoutVolumeParameters readoutVolumeParams;
+          readoutVolumeParams.m_id = LArPandoraGeometry::GetDaughterVolumeID(
+            driftVolumeMap, childVolume.GetCryostat(), childVolume.GetTpc());
+          readoutVolumeParams.m_center = pandora::CartesianVector(
+            childVolume.GetCenterX(), childVolume.GetCenterY(), childVolume.GetCenterZ());
+          readoutVolumeParams.m_size = pandora::CartesianVector(
+            childVolume.GetWidthX(), childVolume.GetWidthY(), childVolume.GetWidthZ());
+
+          for (const LArPandoraReadoutUnit& unit : childVolume.GetReadoutUnitList()) {
+            object_creation::LArReadoutUnitParameters unitParams;
+            unitParams.m_id = unit.GetId();
+            unitParams.m_view = unit.GetView();
+            unitParams.m_referenceCoordinate = unit.GetReferenceCoordinate();
+            unitParams.m_pitch = unit.GetPitch();
+            unitParams.m_unitCenter = unit.GetUnitCenter();
+            unitParams.m_unitSize = unit.GetUnitSize();
+
+            for (const LArPandoraReadoutChannel& channel : unit.GetChannels()) {
+              object_creation::LArReadoutChannelParameters channelParams;
+              channelParams.m_id = channel.GetId();
+              channelParams.m_channelIntervalArray = channel.GetChannelIntervals();
+              unitParams.m_channelParametersVector.push_back(channelParams);
+            }
+            readoutVolumeParams.m_readoutUnitParametersVector.push_back(unitParams);
+          }
+          parameters.m_readoutVolumeParametersVector.push_back(readoutVolumeParams);
+        }
       }
       catch (const pandora::StatusCodeException&) {
         mf::LogWarning("LArPandora") << "CreatePandoraLArTPCs - invalid tpc parameter provided, "
